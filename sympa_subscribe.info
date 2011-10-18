@@ -1,0 +1,7 @@
+name        = Sympa Subscribe
+description = Subscribe to a pre-configured Sympa mailing list.
+package     = Other
+core        = 7.x
+version     = 7.x-0.1
+configure   = admin/config/content/sympa_subscribe
+
