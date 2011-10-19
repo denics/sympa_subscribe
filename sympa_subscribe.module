@@ -24,7 +24,7 @@
 function sympa_subscribe_help($path, $arg) {
   switch ($path) {
     case 'admin/help#sympa_subscribe':
-      return '<p>' . t('Display Sympa subscribe/unsubscribe block') . '</p>';
+      return '<p>' . t('Display Sympa subscribe block') . '</p>';
       break;
   }
 }
