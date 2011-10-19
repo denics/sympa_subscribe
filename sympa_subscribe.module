@@ -2,7 +2,7 @@
 
 /**
  * @file    
- * Drupal 7.x example module.
+ * Subscribe to a pre-configured Sympa mailing list.
  */
 
 
