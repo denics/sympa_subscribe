@@ -24,42 +24,36 @@
 function sympa_subscribe_help($path, $arg) {
   switch ($path) {
     case 'admin/help#sympa_subscribe':
-      return '<p>' . t('Display Sympa subscribe/unsubscribe block') . '</p>';
+      return '<p>' . t('Display Sympa subscribe block') . '</p>';
       break;
   }
 }
 
 /**
- * Implements hook_block_info().
+ * Implementation of hook_block().
+ * @param string  $op     one of 'list', 'view', 'save' and 'configure'
+ * @param integer $delta  code to identify the block
+ * @param array   $edit   only for save operation
  */
-function sympa_subscribe_block_info() {
-  $blocks['sympa_subscribe'] = array(
-    'info'  => t('Sympa Subscribe'),  // the name that will appear in the block list
-    'cache' => DRUPAL_CACHE_PER_ROLE  // default
-  );
-  return $blocks;
-}
-
-/**
- * Implements hook_block_view().
- */
-function sympa_subscribe_block_view($delta = '') {
-  drupal_add_js( drupal_get_path('module', 'sympa_subscribe') . '/sympa_subscribe.js', 'file');
-
+function sympa_subscribe_block( $op = 'list', $delta = 0, $edit = array() ) {
   $block = array();
 
-  switch ($delta) {
-    case 'sympa_subscribe':
-      // TODO This could/should be so much better.
-      $title    = variable_get('sympa_subscribe_title');
-      $blurb    = variable_get('sympa_subscribe_blurb');
-      $confirm  = variable_get('sympa_subscribe_confirm');
-      $url      = variable_get('sympa_subscribe_url');
-      $list     = variable_get('sympa_subscribe_list');
+  if      ($op == 'list') { // Generate listing of blocks for the 'admin/block' page
+    $block[0]['info'] = t('Sympa Subscribe');
+  }
+  elseif  ($op == 'view') { // Generate our block content
+    drupal_add_js( drupal_get_path('module', 'sympa_subscribe') . '/sympa_subscribe.js' );
 
-      $block['subject'] = t($title);
-      // TODO Use the Form API?
-      $block['content'] = <<<EOCONTENT
+    // TODO This could/should be so much better.
+    $title    = variable_get('sympa_subscribe_title',   '');
+    $blurb    = variable_get('sympa_subscribe_blurb',   '');
+    $confirm  = variable_get('sympa_subscribe_confirm', '');
+    $url      = variable_get('sympa_subscribe_url',     '');
+    $list     = variable_get('sympa_subscribe_list',    '');
+
+    $block['subject'] = t($title);
+    // TODO Use the Form API?
+    $block['content'] = <<<EOCONTENT
 <div id="sympa_subscribe_subscribe_form">
   <form target="hiddensubmit"
         method="post"
@@ -125,8 +119,17 @@ function sympa_subscribe_block_view($delta = '') {
 <p><iframe style="display: none;" name="hiddensubmit"></iframe></p>
 EOCONTENT;
   }
+
   return $block;
 }
+
+/**
+ * Implements hook_block_view().
+ */
+/*
+  return $block;
+}
+*/
 
 /**
  * Implements hook_menu().
@@ -134,7 +137,7 @@ EOCONTENT;
 function sympa_subscribe_menu() {
   $items = array();
 
-  $items['admin/config/content/sympa_subscribe'] = array(
+  $items['admin/settings/sympa_subscribe'] = array(
     'title'             => 'Sympa Subscribe',
     'description'       => 'Configuration for Sympa Subscribe module',
     'page callback'     => 'drupal_get_form',
@@ -178,9 +181,9 @@ function sympa_subscribe_configuration_form() {
   $form['sympa_subscribe_confirm'] = array(
     '#type'           => 'textarea',
     '#title'          => t('Block Confirmation Blurb'),
-    '#default_value'  => variable_get('sympa_subscribe_confirm', 
-                                      'Please check your email for a message from the listhost. ' +
-                                      'Either enter the provided password here or click on the '  + 
+    '#default_value'  => variable_get('sympa_subscribe_confirm',
+                                      'Please check your email for a message from the listhost. ' .
+                                      'Either enter the provided password here or click on the '  .
                                       'provided link to finish your subscription.'),
     '#cols'           => 2,
     '#rows'           => 2,
