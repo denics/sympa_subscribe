@@ -1,0 +1,12 @@
+
+Sympa Subscribe 7.x-1.0, YYYY-MM-DD
+-----------------------------------
+- Improved conformance to Drupal module guidelines.
+- Changed configuration path from 'admin/config/content/sympa_subscribe' to 
+  'admin/config/system/sympa_subscribe'.
+
+
+Sympa Subscribe 7.x-0.1, 2011-10-19
+-----------------------------------
+- First public release of module.
+

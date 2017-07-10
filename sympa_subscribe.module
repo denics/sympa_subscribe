@@ -1,0 +1,283 @@
+<?php
+
+/**
+ * Subscribe to a pre-configured Sympa mailing list.
+ */
+
+define( 'SYMPA_SUBSCRIBE',         'sympa_subscribe'         );
+define( 'SYMPA_SUBSCRIBE_BLURB',   'sympa_subscribe_blurb'   );
+define( 'SYMPA_SUBSCRIBE_CONFIRM', 'sympa_subscribe_confirm' );
+define( 'SYMPA_SUBSCRIBE_LIST',    'sympa_subscribe_list'    );
+define( 'SYMPA_SUBSCRIBE_TITLE',   'sympa_subscribe_title'   );
+define( 'SYMPA_SUBSCRIBE_URL',     'sympa_subscribe_url'     );
+
+
+/**
+ * Implements hook_block_info().
+ */
+function sympa_subscribe_block_info() {
+  $blocks[SYMPA_SUBSCRIBE] = array(
+    'info'  => t('Sympa Subscribe'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function sympa_subscribe_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case SYMPA_SUBSCRIBE:
+      $block['subject'] = variable_get(SYMPA_SUBSCRIBE_TITLE);
+      $block['content'] = drupal_get_form('sympa_subscribe_form');
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Form function called by drupal_get_form() in sympa_subscribe_menu().
+ */
+function sympa_subscribe_configuration_form() {
+  $form[SYMPA_SUBSCRIBE_TITLE] = array(
+    '#type'           => 'textfield',
+    '#title'          => t('Block title'),
+    '#default_value'  => variable_get( SYMPA_SUBSCRIBE_TITLE, 'Mailing List' ),
+    '#size'           => 32,
+    '#maxlength'      => 64,
+    '#required'       => TRUE
+  );
+
+  $form[SYMPA_SUBSCRIBE_BLURB] = array(
+    '#type'           => 'textfield',
+    '#title'          => t('Block subscribe blurb'),
+    '#default_value'  => variable_get( SYMPA_SUBSCRIBE_BLURB, 'Sign up for our mailing list' ),
+    '#size'           => 32,
+    '#maxlength'      => 128,
+    '#required'       => TRUE
+  );
+
+  $form[SYMPA_SUBSCRIBE_CONFIRM] = array(
+    '#type'           => 'textarea',
+    '#title'          => t('Block confirmation blurb'),
+    '#default_value'  => variable_get( SYMPA_SUBSCRIBE_CONFIRM, 'Follow link to confirm your subscription.' ),
+    '#cols'           => 2,
+    '#rows'           => 2,
+    '#required'       => TRUE
+  );
+
+  $form[SYMPA_SUBSCRIBE_URL] = array(
+    '#type'           => 'textfield',
+    '#title'          => t('Sympa URL (eg. https://sympa.example.org/web)'),
+    '#default_value'  => variable_get( SYMPA_SUBSCRIBE_URL, '' ),
+    '#size'           => 32,
+    '#maxlength'      => 64,
+    '#required'       => TRUE
+  );
+
+  $form[SYMPA_SUBSCRIBE_LIST] = array(
+    '#type'           => 'textfield',
+    '#title'          => t('Sympa list name'),
+    '#default_value'  => variable_get( SYMPA_SUBSCRIBE_LIST, '' ),
+    '#size'           => 32,
+    '#maxlength'      => 64,
+    '#required'       => TRUE
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements validation for sympa_subscribe_configuration_form().
+ *
+ * @param $form
+ *   A structured array containing the elements and properties of the form.
+ * @param $form_state
+ *   An array that stores information about the form's current state
+ *   during processing.
+ */
+function sympa_subscribe_configuration_form_validate($form, &$form_state) {
+  $key    = SYMPA_SUBSCRIBE_TITLE;
+  $title  = $form_state['values'][$key];
+  if      (!is_string($title)) {
+    form_set_error($key, t('Must be a string'));
+  }
+  elseif  (empty($title)) {
+    form_set_error($key, t('String cannot not be empty'));
+  }
+
+  $key    = SYMPA_SUBSCRIBE_BLURB;
+  $blurb  = $form_state['values'][$key];
+  if      (!is_string($blurb)) {
+    form_set_error($key, t('Must be a string'));
+  }
+  elseif  (empty($blurb)) {
+    form_set_error($key, t('String cannot not be empty'));
+  }
+
+  $key      = SYMPA_SUBSCRIBE_CONFIRM;
+  $confirm  = $form_state['values'][$key];
+  if      (!is_string($confirm)) {
+    form_set_error($key, t('Must be a string'));
+  }
+  elseif  (empty($confirm)) {
+    form_set_error($key, t('String cannot not be empty'));
+  }
+
+  $key  = SYMPA_SUBSCRIBE_URL;
+  $url  = $form_state['values'][$key];
+  if      (!is_string($url)) {
+    form_set_error($key, t('Must be a string'));
+  }
+  elseif  (empty($url)) {
+    form_set_error($key, t('String cannot not be empty'));
+  }
+  elseif  (!valid_url($url)) {
+    form_set_error($key, t('Not a valid URL'));
+  }
+
+  $key  = SYMPA_SUBSCRIBE_LIST;
+  $list = $form_state['values'][$key];
+  if      (!is_string($list)) {
+    form_set_error($key, t('Must be a string'));
+  }
+  elseif  (empty($list)) {
+    form_set_error($key, t('String cannot not be empty'));
+  }
+}
+
+function sympa_subscribe_confirm_form($form, $form_state, $mail) {
+  $form['subscribe'] = array(
+    '#tree' => TRUE,
+    'text'  => array(
+      '#markup' => variable_get(SYMPA_SUBSCRIBE_CONFIRM),
+      '#suffix' => '<br/>'
+    ),
+    'confirm' => array(
+      '#type'    => 'link',
+      '#title'   => t('Confirm subscription'),
+      '#href'    => variable_get(SYMPA_SUBSCRIBE_URL),
+      '#options' => array(
+        'query' => array(
+          'action' => 'subscribe',
+          'list'   => variable_get(SYMPA_SUBSCRIBE_LIST),
+          'email'  => $mail
+        ),
+      ),
+      '#attributes' => array(
+        'target' => '_blank'
+      )
+    )
+  );
+  return $form;
+}
+
+function sympa_subscribe_form() {
+  return array(
+    '#tree' => TRUE,
+    'subscribe' => array(
+      '#prefix' => '<div id="sympa-subscribe-div">',
+      '#suffix' => '</div>',
+      'action'  => array(
+        '#type'       => 'hidden',
+        '#value'      => 'subrequest'
+      ),
+      'blurb'   => array(
+        '#markup'     => variable_get(SYMPA_SUBSCRIBE_BLURB)
+      ),
+      'mail'    => array(
+        '#type'       => 'textfield',
+        '#required'   => TRUE,
+        '#attributes' => array(
+          'style'       => 'width: 100%;'
+        ),
+      ),
+      'submit'  => array(
+        '#type'     => 'submit',
+        '#value'    => t('Join'),
+        '#ajax'     => array(
+          'callback'  => 'sympa_subscribe_form_callback',
+          'wrapper'   => 'sympa-subscribe-div',
+          'method'    => 'replace'
+        )
+      )
+    )
+  );
+}
+
+function sympa_subscribe_form_callback($form, $form_state) {
+  if ( form_get_errors() ) { // @todo There has to be something better.
+    drupal_set_message( t('Invalid e-mail address'), 'error' );
+    return $form['subscribe'];
+  }
+
+  $list  = variable_get(SYMPA_SUBSCRIBE_LIST);
+  $url   = variable_get(SYMPA_SUBSCRIBE_URL);
+  $mail  = $form_state['values']['subscribe']['mail'];
+
+  $options  = array(
+    'method' => 'POST',
+    'data'   => 'action=subrequest&list=' . $list . '&email=' . $mail // @todo Encode?
+  );
+  watchdog( SYMPA_SUBSCRIBE, 'subscription request: ' . $mail );
+
+  $result = drupal_http_request($url, $options);
+  if ( property_exists( $result, 'error' ) ) {
+    drupal_set_message( $result->error, 'error' );
+    watchdog( SYMPA_SUBSCRIBE, 'subscription request: code=' . $result->code . ' error=' . $result->error );
+    return $form['subscribe'];
+  }
+  watchdog( SYMPA_SUBSCRIBE, 'subscription request: code=' . $result->code );
+  return drupal_get_form('sympa_subscribe_confirm_form', $mail);
+}
+
+function sympa_subscribe_form_validate($form, &$form_state) {
+  $mail = $form_state['values']['subscribe']['mail'];
+  if ( !$mail || 0 == preg_match( '/^\S+\@(?:\w+\.)+\w+$/', $mail ) ) { // @todo This could be a lot better!
+    watchdog( SYMPA_SUBSCRIBE, 'sympa_subscribe_form_validate() - invalid e-mail address (' . $mail . ')' );
+    form_set_error( t('Invalid e-mail address' ) );
+  }
+}
+
+/**
+ * Implements hook_help().
+ *
+ * Displays help and module information.
+ *
+ * @param path
+ *   Which path of the site we're using to display help.
+ * @param arg
+ *   Array that holds the current path as returned from arg() function.
+ */
+function sympa_subscribe_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#sympa_subscribe':
+      return '<p>' . t('Display Sympa subscribe block') . '</p>';
+      break;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function sympa_subscribe_menu() {
+  $items = array();
+
+  $items['admin/config/system/sympa_subscribe'] = array(
+    'title'             => 'Sympa Subscribe',
+    'description'       => 'Configuration for Sympa Subscribe module',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('sympa_subscribe_configuration_form'),
+    'access arguments'  => array('access administration pages'),
+    'type'              => MENU_NORMAL_ITEM
+  );
+
+  return $items;
+}
+
+// vim: syntax=php
+
